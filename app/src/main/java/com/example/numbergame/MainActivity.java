@@ -62,11 +62,7 @@ public class MainActivity extends AppCompatActivity {
         timerText = findViewById(R.id.timer);
         enter = findViewById(R.id.pick);
         submit = findViewById(R.id.submit);
-
-        // Generate random number from 1 to 20
         num = rand.nextInt(20) + 1;
-
-        // Get current score
         scoreCount = getIntent().getIntExtra("scoreCount", 0);
 
         score.setText("Score: " + scoreCount);
@@ -77,10 +73,7 @@ public class MainActivity extends AppCompatActivity {
         submit.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-
                 String input = enter.getText().toString().trim();
-
-                // Empty input does not count as a try
                 if (input.isEmpty()) {
                     score.setText("Enter a number");
                     return;
@@ -91,86 +84,54 @@ public class MainActivity extends AppCompatActivity {
                 try {
                     guess = Integer.parseInt(input);
                 } catch (NumberFormatException e) {
-
-                    // Invalid input does not count as a try
                     score.setText("Enter a valid number");
                     enter.setText("");
                     return;
                 }
 
-                // Number outside the range does not count as a try
                 if (guess < 1 || guess > 20) {
-
                     score.setText("Enter a number from 1 to 20");
 
                 } else if (guess < num) {
-
-                    // Wrong try
                     tries++;
-
                     score.setText("Higher");
-
                     checkTries();
-
                 } else if (guess > num) {
-
-                    // Wrong try
                     tries++;
-
                     score.setText("Lower");
-
                     checkTries();
-
                 } else {
-
-                    // Correct answer
                     timerRunning = false;
-
                     scoreCount++;
-
                     Intent intent =
                             new Intent(MainActivity.this, ScoreView.class);
-
                     intent.putExtra("scoreCount", scoreCount);
                     intent.putExtra("status", "win");
-
                     startActivity(intent);
                     finish();
                 }
-
                 enter.setText("");
             }
         });
     }
 
     private void checkTries() {
-
         if (tries >= 5) {
-
-            // Stop timer
             timerRunning = false;
-
-            // Lose round, but do NOT lose a point
             Intent intent =
                     new Intent(MainActivity.this, ScoreView.class);
-
             intent.putExtra("scoreCount", scoreCount);
             intent.putExtra("status", "lose");
-
             startActivity(intent);
             finish();
         }
     }
 
     private void startTimer() {
-
         timerThread = new Thread(new Runnable() {
-
             @Override
             public void run() {
-
                 while (timerRunning && seconds > 0) {
-
                     try {
                         Thread.sleep(1000);
                     } catch (InterruptedException e) {
@@ -191,7 +152,6 @@ public class MainActivity extends AppCompatActivity {
                     });
                 }
 
-                // Time is up
                 if (seconds == 0 && timerRunning) {
 
                     timerRunning = false;
@@ -199,8 +159,6 @@ public class MainActivity extends AppCompatActivity {
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-
-                            // Lose one point because time ran out
                             if (scoreCount > 0) {
                                 scoreCount--;
                             }
@@ -221,17 +179,13 @@ public class MainActivity extends AppCompatActivity {
                 }
             }
         });
-
         timerThread.start();
     }
 
     @Override
     protected void onDestroy() {
         super.onDestroy();
-
-        // Stop the timer thread when leaving the activity
         timerRunning = false;
-
         if (timerThread != null) {
             timerThread.interrupt();
         }
