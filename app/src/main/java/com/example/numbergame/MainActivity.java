@@ -110,8 +110,6 @@ public class MainActivity extends AppCompatActivity {
         initValues();
         startTimer();
 
-        // REMOVED `score = 0;` because it was overwriting your game progress!
-
         submitBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
