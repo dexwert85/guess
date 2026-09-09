@@ -1,6 +1,7 @@
 package com.example.numbergame;
 
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.Button;
@@ -19,7 +20,7 @@ public class MainActivity extends AppCompatActivity {
 
     private TextView score;
     private TextView timerText;
-    private EditText enter;
+    private EditText enter, name;
     private Button submit;
 
     private int scoreCount = 0;
@@ -58,12 +59,7 @@ public class MainActivity extends AppCompatActivity {
                 }
         );
 
-        score = findViewById(R.id.score);
-        timerText = findViewById(R.id.timer);
-        enter = findViewById(R.id.pick);
-        submit = findViewById(R.id.submit);
-        num = rand.nextInt(20) + 1;
-        scoreCount = getIntent().getIntExtra("scoreCount", 0);
+        initViews();
 
         score.setText("Score: " + scoreCount);
         timerText.setText("Time: 20");
@@ -91,7 +87,6 @@ public class MainActivity extends AppCompatActivity {
 
                 if (guess < 1 || guess > 20) {
                     score.setText("Enter a number from 1 to 20");
-
                 } else if (guess < num) {
                     tries++;
                     score.setText("Higher");
@@ -103,8 +98,10 @@ public class MainActivity extends AppCompatActivity {
                 } else {
                     timerRunning = false;
                     scoreCount++;
-                    Intent intent =
-                            new Intent(MainActivity.this, ScoreView.class);
+
+                    saveHighScore(name.getText().toString().trim(), scoreCount);
+
+                    Intent intent = new Intent(MainActivity.this, ScoreView.class);
                     intent.putExtra("scoreCount", scoreCount);
                     intent.putExtra("status", "win");
                     startActivity(intent);
@@ -113,6 +110,16 @@ public class MainActivity extends AppCompatActivity {
                 enter.setText("");
             }
         });
+    }
+
+    private void initViews() {
+        score = findViewById(R.id.score);
+        timerText = findViewById(R.id.timer);
+        enter = findViewById(R.id.pick);
+        name = findViewById(R.id.name);
+        submit = findViewById(R.id.submit);
+        num = rand.nextInt(20) + 1;
+        scoreCount = getIntent().getIntExtra("scoreCount", 0);
     }
 
     private void checkTries() {
@@ -180,6 +187,22 @@ public class MainActivity extends AppCompatActivity {
             }
         });
         timerThread.start();
+    }
+
+    private void saveHighScore(String playerName, int currentScore) {
+        if (playerName.isEmpty()) {
+            playerName = "Anonymous";
+        }
+
+        SharedPreferences prefs = getSharedPreferences("GamePrefs", MODE_PRIVATE);
+        int savedHighScore = prefs.getInt("high_score", 0);
+
+        if (currentScore > savedHighScore) {
+            SharedPreferences.Editor editor = prefs.edit();
+            editor.putInt("high_score", currentScore);
+            editor.putString("high_score_name", playerName);
+            editor.apply();
+        }
     }
 
     @Override
