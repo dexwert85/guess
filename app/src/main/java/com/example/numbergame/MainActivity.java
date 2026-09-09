@@ -3,6 +3,7 @@ package com.example.numbergame;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.os.CountDownTimer;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -17,179 +18,29 @@ import androidx.core.view.WindowInsetsCompat;
 import java.util.Random;
 
 public class MainActivity extends AppCompatActivity {
-
-    private TextView score;
-    private TextView timerText;
-    private EditText enter, name;
-    private Button submit;
-
-    private int scoreCount = 0;
-    private int num;
-
-    private int seconds = 20;
-    private int tries = 0;
-
-    private Thread timerThread;
-    private boolean timerRunning = true;
-
+    private TextView scoreTv, timeTv;
+    private EditText nameEt, pickEt;
+    private Button submitBtn;
+    private int score, guess, num, tries;
     private final Random rand = new Random();
-
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-
-        EdgeToEdge.enable(this);
-        setContentView(R.layout.activity_main);
-
-        ViewCompat.setOnApplyWindowInsetsListener(
-                findViewById(R.id.main),
-                (v, insets) -> {
-
-                    Insets systemBars =
-                            insets.getInsets(WindowInsetsCompat.Type.systemBars());
-
-                    v.setPadding(
-                            systemBars.left,
-                            systemBars.top,
-                            systemBars.right,
-                            systemBars.bottom
-                    );
-
-                    return insets;
-                }
-        );
-
-        initViews();
-
-        score.setText("Score: " + scoreCount);
-        timerText.setText("Time: 20");
-
-        startTimer();
-
-        submit.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                String input = enter.getText().toString().trim();
-                if (input.isEmpty()) {
-                    score.setText("Enter a number");
-                    return;
-                }
-
-                int guess;
-
-                try {
-                    guess = Integer.parseInt(input);
-                } catch (NumberFormatException e) {
-                    score.setText("Enter a valid number");
-                    enter.setText("");
-                    return;
-                }
-
-                if (guess < 1 || guess > 20) {
-                    score.setText("Enter a number from 1 to 20");
-                } else if (guess < num) {
-                    tries++;
-                    score.setText("Higher");
-                    checkTries();
-                } else if (guess > num) {
-                    tries++;
-                    score.setText("Lower");
-                    checkTries();
-                } else {
-                    timerRunning = false;
-                    scoreCount++;
-
-                    saveHighScore(name.getText().toString().trim(), scoreCount);
-
-                    Intent intent = new Intent(MainActivity.this, ScoreView.class);
-                    intent.putExtra("scoreCount", scoreCount);
-                    intent.putExtra("status", "win");
-                    startActivity(intent);
-                    finish();
-                }
-                enter.setText("");
-            }
-        });
-    }
+    private CountDownTimer countDownTimer;
 
     private void initViews() {
-        score = findViewById(R.id.score);
-        timerText = findViewById(R.id.timer);
-        enter = findViewById(R.id.pick);
-        name = findViewById(R.id.name);
-        submit = findViewById(R.id.submit);
+        scoreTv = findViewById(R.id.score);
+        timeTv = findViewById(R.id.timer);
+        nameEt = findViewById(R.id.name);
+        pickEt = findViewById(R.id.pick);
+        submitBtn = findViewById(R.id.submit);
+    }
+
+    private void initValues() {
         num = rand.nextInt(20) + 1;
-        scoreCount = getIntent().getIntExtra("scoreCount", 0);
+        score = getIntent().getIntExtra("score", 0);
+        scoreTv.setText("Score: " + score);
     }
 
-    private void checkTries() {
-        if (tries >= 5) {
-            timerRunning = false;
-            Intent intent =
-                    new Intent(MainActivity.this, ScoreView.class);
-            intent.putExtra("scoreCount", scoreCount);
-            intent.putExtra("status", "lose");
-            startActivity(intent);
-            finish();
-        }
-    }
-
-    private void startTimer() {
-        timerThread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                while (timerRunning && seconds > 0) {
-                    try {
-                        Thread.sleep(1000);
-                    } catch (InterruptedException e) {
-                        return;
-                    }
-
-                    if (!timerRunning) {
-                        return;
-                    }
-
-                    seconds--;
-
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            timerText.setText("Time: " + seconds);
-                        }
-                    });
-                }
-
-                if (seconds == 0 && timerRunning) {
-
-                    timerRunning = false;
-
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            if (scoreCount > 0) {
-                                scoreCount--;
-                            }
-
-                            Intent intent =
-                                    new Intent(
-                                            MainActivity.this,
-                                            ScoreView.class
-                                    );
-
-                            intent.putExtra("scoreCount", scoreCount);
-                            intent.putExtra("status", "lose");
-
-                            startActivity(intent);
-                            finish();
-                        }
-                    });
-                }
-            }
-        });
-        timerThread.start();
-    }
-
-    private void saveHighScore(String playerName, int currentScore) {
+    private void saveHighScore() {
+        String playerName = nameEt.getText().toString().trim();
         if (playerName.isEmpty()) {
             playerName = "Anonymous";
         }
@@ -197,20 +48,121 @@ public class MainActivity extends AppCompatActivity {
         SharedPreferences prefs = getSharedPreferences("GamePrefs", MODE_PRIVATE);
         int savedHighScore = prefs.getInt("high_score", 0);
 
-        if (currentScore > savedHighScore) {
+        if (score > savedHighScore) {
             SharedPreferences.Editor editor = prefs.edit();
-            editor.putInt("high_score", currentScore);
+            editor.putInt("high_score", score);
             editor.putString("high_score_name", playerName);
             editor.apply();
         }
     }
 
+    private void checkTries() {
+        if (tries >= 5) {
+            if (countDownTimer != null) {
+                countDownTimer.cancel();
+            }
+            saveHighScore();
+            Intent intent = new Intent(MainActivity.this, ScoreView.class);
+            intent.putExtra("score", score);
+            intent.putExtra("status", "lose");
+            startActivity(intent);
+            finish();
+        }
+    }
+
+    private void startTimer() {
+        countDownTimer = new CountDownTimer(30000, 1000) {
+            @Override
+            public void onTick(long millisUntilFinished) {
+                long secondsLeft = millisUntilFinished / 1000;
+                timeTv.setText("Time: " + secondsLeft);
+            }
+
+            @Override
+            public void onFinish() {
+                timeTv.setText("Time: 0");
+                if (score > 0) {
+                    score--;
+                }
+                saveHighScore();
+
+                Intent intent = new Intent(MainActivity.this, ScoreView.class);
+                intent.putExtra("score", score);
+                intent.putExtra("status", "lose");
+                startActivity(intent);
+                finish();
+            }
+        }.start();
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        EdgeToEdge.enable(this);
+        setContentView(R.layout.activity_main);
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main), (v, insets) -> {
+            Insets systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars());
+            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom);
+            return insets;
+        });
+
+        initViews();
+        initValues();
+        startTimer();
+
+        // REMOVED `score = 0;` because it was overwriting your game progress!
+
+        submitBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                String input = pickEt.getText().toString().trim();
+                if (input.isEmpty()) {
+                    scoreTv.setText("Enter a number");
+                    return;
+                }
+
+                try {
+                    guess = Integer.parseInt(input);
+                } catch (NumberFormatException e) {
+                    scoreTv.setText("Enter a valid number");
+                    pickEt.setText("");
+                    return;
+                }
+
+                if (guess < 1 || guess > 20) {
+                    scoreTv.setText("Enter a number from 1 to 20");
+                } else if (guess < num) {
+                    tries++;
+                    scoreTv.setText("Higher");
+                    checkTries();
+                } else if (guess > num) {
+                    tries++;
+                    scoreTv.setText("Lower");
+                    checkTries();
+                } else {
+                    if (countDownTimer != null) {
+                        countDownTimer.cancel();
+                    }
+
+                    score++;
+                    saveHighScore();
+
+                    Intent intent = new Intent(MainActivity.this, ScoreView.class);
+                    intent.putExtra("score", score);
+                    intent.putExtra("status", "win");
+                    startActivity(intent);
+                    finish();
+                }
+                pickEt.setText("");
+            }
+        });
+    }
+
     @Override
     protected void onDestroy() {
         super.onDestroy();
-        timerRunning = false;
-        if (timerThread != null) {
-            timerThread.interrupt();
+        if (countDownTimer != null) {
+            countDownTimer.cancel();
         }
     }
 }

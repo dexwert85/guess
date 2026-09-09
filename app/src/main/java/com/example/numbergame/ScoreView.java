@@ -26,7 +26,7 @@ public class ScoreView extends AppCompatActivity {
         statusText = findViewById(R.id.textView);
         restartBtn = findViewById(R.id.restart);
         exitBtn = findViewById(R.id.exit);
-        scoreCount = getIntent().getIntExtra("scoreCount", 0);
+        scoreCount = getIntent().getIntExtra("score", 0);
         status = getIntent().getStringExtra("status");
         result.setText("Score: " + scoreCount);
 
@@ -43,7 +43,7 @@ public class ScoreView extends AppCompatActivity {
             public void onClick(View v) {
                 Intent intent =
                         new Intent(ScoreView.this, MainActivity.class);
-                intent.putExtra("scoreCount", scoreCount);
+                intent.putExtra("score", scoreCount);
 
                 startActivity(intent);
                 finish();
