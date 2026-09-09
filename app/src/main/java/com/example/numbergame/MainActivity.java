@@ -64,6 +64,9 @@ public class MainActivity extends AppCompatActivity {
             if (countDownTimer != null) {
                 countDownTimer.cancel();
             }
+
+            score--;
+
             saveHighScore();
             Intent intent = new Intent(MainActivity.this, ScoreView.class);
             intent.putExtra("score", score);
@@ -160,7 +163,7 @@ public class MainActivity extends AppCompatActivity {
                         countDownTimer.cancel();
                     }
 
-                    score++;
+                    score += 2;
                     saveHighScore();
 
                     Intent intent = new Intent(MainActivity.this, ScoreView.class);
