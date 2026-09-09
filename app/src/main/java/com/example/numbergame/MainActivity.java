@@ -4,6 +4,8 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.os.CountDownTimer;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
@@ -24,6 +26,7 @@ public class MainActivity extends AppCompatActivity {
     private int score, guess, num, tries;
     private final Random rand = new Random();
     private CountDownTimer countDownTimer;
+    private boolean isTimerStarted = false;
 
     private void initViews() {
         scoreTv = findViewById(R.id.score);
@@ -108,7 +111,22 @@ public class MainActivity extends AppCompatActivity {
 
         initViews();
         initValues();
-        startTimer();
+
+        pickEt.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                if (!isTimerStarted && s.length() > 0) {
+                    isTimerStarted = true;
+                    startTimer();
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {}
+        });
 
         submitBtn.setOnClickListener(new View.OnClickListener() {
             @Override
