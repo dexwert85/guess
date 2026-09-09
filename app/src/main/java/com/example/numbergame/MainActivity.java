@@ -121,7 +121,7 @@ public class MainActivity extends AppCompatActivity {
 
             @Override
             public void onTextChanged(CharSequence s, int start, int before, int count) {
-                if (!isTimerStarted && s.length() > 0) {
+                if (!isTimerStarted && s.length() > 0 && !nameEt.getText().toString().isEmpty()) {
                     isTimerStarted = true;
                     startTimer();
                 }
